@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware  
 from PIL import Image, ImageDraw, ImageFont
-import qrcode
+import requests
+from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 import json
@@ -99,18 +100,15 @@ def generate_pdf(reg_no_input: str) -> str:
     draw.text(POS["section"], section, fill="black", font=font_regular)
     draw.text(POS["roll"], roll_no, fill="black", font=font_bold)
 
-    # Generate exact QR
-    qr_data = f"{reg_no}({name}),Class:{class_},Sec:{section}/Exam:PRE BOARD-2/PRE BOARD-2-CHINMAYA"
-    qr = qrcode.QRCode(
-        version=None,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=10,
-        border=1
-    )
-    qr.add_data(qr_data)
-    qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    qr_img = qr_img.resize((QR_SIZE, QR_SIZE))
+    # ---------------- FETCH QR FROM API ----------------
+    qr_data_encoded = f"{reg_no}({name}),Class:{class_},Sec:{section}/Exam:PRE BOARD-2/PRE BOARD-2-CHINMAYA"
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size={QR_SIZE}x{QR_SIZE}&data={requests.utils.quote(qr_data_encoded)}"
+
+    response = requests.get(qr_url)
+    if response.status_code != 200:
+        raise Exception("Failed to fetch QR code from API")
+
+    qr_img = Image.open(BytesIO(response.content)).convert("RGB")
     img.paste(qr_img, POS["qr"])
 
     # Save temporary image
