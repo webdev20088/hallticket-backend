@@ -1,5 +1,6 @@
 fastapi
 uvicorn
 pillow
-qrcode
 reportlab
+qrcode
+requests
