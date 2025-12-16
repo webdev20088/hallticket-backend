@@ -10,10 +10,11 @@ import os
 import uuid
 
 app = FastAPI()
+
 # Enable CORS for your Netlify frontend only
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://cvadmitcard.netlify.app"],  # only your frontend
+    allow_origins=["https://cvadmitcard.netlify.app"],  # your frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,6 +27,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(BASE_DIR, "dummy.png")
 JSON_FILE = os.path.join(BASE_DIR, "s.json")
 
+# Fonts (make sure filenames are exactly calibri.ttf / calibrib.ttf)
 FONT_REGULAR = os.path.join(BASE_DIR, "calibri.ttf")
 FONT_BOLD = os.path.join(BASE_DIR, "calibrib.ttf")
 
@@ -55,12 +57,13 @@ def generate_pdf(reg_no_input: str) -> str:
     if not os.path.exists(JSON_FILE):
         raise FileNotFoundError(f"JSON file not found: {JSON_FILE}")
 
+    # Load JSON data
     with open(JSON_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
+    # Find student
     student = None
     student_class = None
-
     for class_key, students in data.items():
         for s in students:
             if str(s.get("registrationNo")).strip() == reg_no_input:
@@ -73,6 +76,7 @@ def generate_pdf(reg_no_input: str) -> str:
     if not student:
         raise ValueError("Registration number not found")
 
+    # Extract details
     name = student["name"].strip().upper()
     reg_no = student["registrationNo"]
     roll_no = str(student["rollNo"]).replace(".0", "")
@@ -85,7 +89,6 @@ def generate_pdf(reg_no_input: str) -> str:
     # Load template and fonts
     img = Image.open(TEMPLATE).convert("RGB")
     draw = ImageDraw.Draw(img)
-
     font_regular = ImageFont.truetype(FONT_REGULAR, FONT_SIZE)
     font_bold = ImageFont.truetype(FONT_BOLD, FONT_SIZE)
 
@@ -96,14 +99,8 @@ def generate_pdf(reg_no_input: str) -> str:
     draw.text(POS["section"], section, fill="black", font=font_regular)
     draw.text(POS["roll"], roll_no, fill="black", font=font_bold)
 
-    # Generate QR
-    qr_data = (
-        f"{reg_no}({name}),"
-        f"Class:{class_},"
-        f"Sec:{section}/"
-        f"Exam:PRE BOARD-2/"
-        f"PRE BOARD-2-CHINMAYA"
-    )
+    # Generate exact QR
+    qr_data = f"{reg_no}({name}),Class:{class_},Sec:{section}/Exam:PRE BOARD-2/PRE BOARD-2-CHINMAYA"
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
