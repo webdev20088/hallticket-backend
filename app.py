@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware  
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
 from reportlab.pdfgen import canvas
@@ -9,6 +10,14 @@ import os
 import uuid
 
 app = FastAPI()
+# Enable CORS for your Netlify frontend only
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://cvadmitcard.netlify.app"],  # only your frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------- FIXED SETTINGS ----------------
 
